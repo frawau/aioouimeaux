@@ -8,8 +8,6 @@ Open source control for Belkin WeMo devices
 ## Features
 
 * Supports WeMo Switch, Light Switch, Insight Switch and Motion
-* Command-line tool to discover and control devices in your environment
-* REST API to obtain information and perform actions on devices
 * Python API to interact with device at a low level using asyncio
 
 ## About this library
