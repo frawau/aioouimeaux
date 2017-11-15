@@ -3,25 +3,23 @@
 Open source control for Belkin WeMo devices
 
 * Free software: BSD license
-* Documentation: http://ouimeaux.rtfd.org.
+* Documentation: Soon at http://aioouimeaux.rtfd.org.
 
 ## Features
 
 * Supports WeMo Switch, Light Switch, Insight Switch and Motion
 * Command-line tool to discover and control devices in your environment
 * REST API to obtain information and perform actions on devices
-* Simple responsive Web app provides device control on mobile
-* Python API to interact with device at a low level
+* Python API to interact with device at a low level using asyncio
 
-## About this fork
+## About this library
 
 The original repository can be found here: https://github.com/iancmcc/ouimeaux
 
-It doesn't appear to be maintained and it doesn't work with modern Python
-packages.
+The library was modified to make use of asyncio.
 
-It has been forked here so that I can include my modifications to
-`requirements.txt` as well as document how to use it.
+It has been forked here since it is a significant change. It has been renamed to
+clearly indicate the difference.
 
 ## Installation
 
