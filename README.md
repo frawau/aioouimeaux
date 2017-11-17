@@ -41,6 +41,38 @@ At this point you should be able to use
 Python 3 installation. On some systems, there are multiple versions of Python
 installed.
 
+You can try:
+```
+python3 -m aioouimeaux
+```
+and see something like:
+```
+    Hit "Enter" to start
+    Use Ctrl-C to quit
+    Motion Motion status is now Off
+    Switch Test Switch 3 status is now Off
+    Switch Test Switch 1 status is now On
+    Switch Test Switch 2 status is now On
+    Motion Motion status is now Off
+    Select Device:
+            [1]     Motion
+            [2]     Test Switch 1
+            [3]     Test Switch 2
+            [4]     Test Switch 3
+
+    Your choice:2
+    Select Function for Test Switch 1:
+            [1]     Power (0 or 1)
+            [2]     Get Home Id
+            [3]     Get MAC Address
+            [4]     Get Device Id
+            [5]     Get Serial Number
+            [6]     Explain
+            [7]     Function X (e.g. basicevent.GetHomeInfo see 'explain')
+
+            [0]     Back to device selection
+
+```
 
 ## Troubleshooting
 
