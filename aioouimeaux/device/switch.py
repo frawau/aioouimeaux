@@ -13,8 +13,8 @@ class Switch(Device):
         """
         Set the state of this device to on or off.
         """
-        self.basicevent.SetBinaryState(BinaryState=int(state))
-        self._state = int(state)
+        return self.basicevent.SetBinaryState(BinaryState=int(state))
+        #self._state = int(state)
 
     def off(self):
         """
@@ -34,9 +34,3 @@ class Switch(Device):
         """
         return self.set_state(not self.get_state())
 
-    def blink(self, delay=1):
-        """
-        Toggle the switch once, then again after a delay (in seconds).
-        """
-        self.toggle()
-        aio.get_event_loop().call_later(delay, self.toggle)

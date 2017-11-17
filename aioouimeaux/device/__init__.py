@@ -40,6 +40,10 @@ class Device(object):
             service.eventSubURL = base_url + svc.get_eventSubURL()
             self.services[svcname] = service
             setattr(self, svcname, service)
+
+        fut = self.basicevent.GetBinaryState()
+        await fut
+        self._state = fut.result()["BinaryState"]
         self.initialized.set_result(True)
 
     def register_callback(self,signal,func):
@@ -55,7 +59,7 @@ class Device(object):
         self._state = int(value)
         if self._callback["statechange"]:
             if aio.iscoroutinefunction(self._callback["statechange"]):
-                aio.ensure_future.call_soon(self._callback["statechange"](self))
+                aio.ensure_future(self._callback["statechange"](self))
             else:
                 self._callback["statechange"](self)
 
@@ -82,12 +86,12 @@ class Device(object):
         except Exception:
             raise DeviceUnreachable(self)
 
-    def explain(self):
+    def explain(self,prefix=""):
         for name, svc in self.services.items():
-            print(name)
-            print('-' * len(name))
+            print(f"{prefix}{name}")
+            print(prefix+'-' * len(name))
             for aname, action in svc.actions.items():
-                print("  %s(%s)" % (aname, ', '.join(action.args)))
+                print("%s  %s(%s)" % (prefix,aname, ', '.join(action.args)))
             print()
 
     @property

@@ -1,9 +1,14 @@
 ============
+Note
+============
+This has not been adapted for aioouimeaux
+
+============
 Contributing
 ============
 
 Contributions are welcome, and they are greatly appreciated! Every
-little bit helps, and credit will always be given. 
+little bit helps, and credit will always be given.
 
 You can contribute in many ways:
 
@@ -36,7 +41,7 @@ is open to whoever wants to implement it.
 Write Documentation
 ~~~~~~~~~~~~~~~~~~~
 
-ouimeaux could always use more documentation, whether as part of the 
+ouimeaux could always use more documentation, whether as part of the
 official ouimeaux docs, in docstrings, or even on the web in blog posts,
 articles, and such.
 
@@ -71,7 +76,7 @@ Ready to contribute? Here's how to set up `ouimeaux` for local development.
 4. Create a branch for local development::
 
     $ git checkout -b name-of-your-bugfix-or-feature
-   
+
    Now you can make your changes locally.
 
 5. When you're done making changes, check that your changes pass flake8 and the tests, including testing other Python versions with tox::
@@ -80,7 +85,7 @@ Ready to contribute? Here's how to set up `ouimeaux` for local development.
     $ python setup.py test
     $ tox
 
-   To get flake8 and tox, just pip install them into your virtualenv. 
+   To get flake8 and tox, just pip install them into your virtualenv.
 
 6. Commit your changes and push your branch to GitHub::
 
@@ -99,7 +104,7 @@ Before you submit a pull request, check that it meets these guidelines:
 2. If the pull request adds functionality, the docs should be updated. Put
    your new functionality into a function with a docstring, and add the
    feature to the list in README.md.
-3. The pull request should work for Python 2.6, 2.7, and 3.3, and for PyPy. Check 
+3. The pull request should work for Python 2.6, 2.7, and 3.3, and for PyPy. Check
    https://travis-ci.org/iancmcc/ouimeaux/pull_requests
    and make sure that the tests pass for all supported Python versions.
 

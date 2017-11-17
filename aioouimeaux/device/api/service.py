@@ -39,21 +39,27 @@ class Action(object):
                     self.args[arg.get_name()] = 0
 
     def __call__(self,**kwargs):
-        aio.ensure_future(self.__do__call__(**kwargs))
+        future = aio.Future()
+        aio.ensure_future(self.__do__call__(future,**kwargs))
+        return future
 
-    async def __do__call__(self, **kwargs):
-        arglist = '\n'.join('<{0}>{1}</{0}>'.format(arg, value)
-                            for arg, value in kwargs.items())
-        body = REQUEST_TEMPLATE.format(
-            action=self.name,
-            service=self.serviceType,
-            args=arglist
-        )
-        response = await requests_post(self.controlURL, data=body.strip(), headers=self.headers)
-        d = {}
-        for r in et.fromstring(await response.read()).getchildren()[0].getchildren()[0].getchildren():
-            d[r.tag] = r.text
-        return d
+    async def __do__call__(self, future, **kwargs):
+        try:
+            arglist = '\n'.join('<{0}>{1}</{0}>'.format(arg, value)
+                                for arg, value in kwargs.items())
+            body = REQUEST_TEMPLATE.format(
+                action=self.name,
+                service=self.serviceType,
+                args=arglist
+            )
+            response = await requests_post(self.controlURL, data=body.strip(), headers=self.headers)
+            d = {}
+            resp = await response.read()
+            for r in et.fromstring(resp).getchildren()[0].getchildren()[0].getchildren():
+                d[r.tag] = r.text
+            future.set_result(d)
+        except Exception as e:
+            future.set_exception(e)
 
     def __repr__(self):
         return f"<Action {self.name} ({', '.join(self.args)}>"

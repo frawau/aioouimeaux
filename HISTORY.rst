@@ -1,5 +1,19 @@
 .. :changelog:
 
+aioouimeaux
+
+Release 0.1.0 (Nov 20, 2017
++++++++++++++++++++++++++++++
+- Modified the code to use asyncio
+    - suppressed use of gevent
+    - suppressed use of requests
+    - suppressed the signal framework (was using thread)
+    - suppressed  REST server and client application
+    - uses aiohttp and aiohttp_wsgi
+    - Renamed Environment to WeMo
+
+ouimeaux
+==========
 History
 -------
 

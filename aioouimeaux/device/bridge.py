@@ -1,3 +1,5 @@
+
+import asyncio as aio
 from aioouimeaux.device import Device
 
 from xml.etree import cElementTree as et
@@ -14,28 +16,51 @@ class Bridge(Device):
         return f'<WeMo Bridge "{self.name}", Lights: {len(self.Lights)}, Groups: {len(self.Groups)}>'
 
     def bridge_get_lights(self):
-        UDN = self.basicevent.GetMacAddr().get('PluginUDN')
-        endDevices = self.bridge.GetEndDevices(DevUDN=UDN,ReqListType='PAIRED_LIST')
-        endDeviceList = et.fromstring(endDevices.get('DeviceLists'))
+        endfuture = aio.Future()
+        future = self.basicevent.GetMacAddr().get('PluginUDN')
+        aio.ensure_future(self.bridge_get_lights_UDN(future,endfuture))
 
-        for light in endDeviceList.iter('DeviceInfo'):
-            if self.light_name(light) in self.Lights:
-                pass
-            else:
-                self.Lights[self.light_name(light)] = light
-        return self.Lights
+    async def bridge_get_lights_UDN(self,future, endfuture):
+        await future
+        try:
+            UDN = future.result()
+            future = self.bridge.GetEndDevices(DevUDN=UDN,ReqListType='PAIRED_LIST')
+            await future
+            endDevices = future.result()
+            endDeviceList = et.fromstring(endDevices.get('DeviceLists'))
+
+            for light in endDeviceList.iter('DeviceInfo'):
+                if self.light_name(light) in self.Lights:
+                    pass
+                else:
+                    self.Lights[self.light_name(light)] = light
+            endfuture.set_result(self.Lights)
+        except Exception as e:
+            endfuture.set_exception(e)
+
 
     def bridge_get_groups(self):
-        UDN = self.basicevent.GetMacAddr().get('PluginUDN')
-        endDevices = self.bridge.GetEndDevices(DevUDN=UDN,ReqListType='PAIRED_LIST')
-        endDeviceList = et.fromstring(endDevices.get('DeviceLists'))
+        endfuture = aio.Future()
+        future = self.basicevent.GetMacAddr().get('PluginUDN')
+        aio.ensure_future(self.bridge_get_groups_UDN(future,endfuture))
 
-        for group in endDeviceList.iter('GroupInfo'):
-            if self.group_name(group) in self.Groups:
-                pass
-            else:
-                self.Groups[self.group_name(group)] = group
-        return self.Groups
+    async def bridge_get_groups_UDN(self,future, endfuture):
+        await future
+        try:
+            UDN = future.result()
+            future = self.bridge.GetEndDevices(DevUDN=UDN,ReqListType='PAIRED_LIST')
+            await future
+            endDevices = future.result()
+            endDeviceList = et.fromstring(endDevices.get('DeviceLists'))
+
+            for group in endDeviceList.iter('GroupInfo'):
+                if self.group_name(group) in self.Groups:
+                    pass
+                else:
+                    self.Groups[self.group_name(group)] = group
+            endfuture.set_result(self.Groups)
+        except Exception as e:
+            endfuture.set_exception(e)
 
     def light_attributes(self, light):
         return {
@@ -96,7 +121,18 @@ class Bridge(Device):
             dim = self.light_get_state(light).get('dim')
 
         sendState = '&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;DeviceStatus&gt;&lt;IsGroupAction&gt;NO&lt;/IsGroupAction&gt;&lt;DeviceID available=&quot;YES&quot;&gt;{devID}&lt;/DeviceID&gt;&lt;CapabilityID&gt;10006&lt;/CapabilityID&gt;&lt;CapabilityValue&gt;{state}&lt;/CapabilityValue&gt;&lt;CapabilityID&gt;10008&lt;/CapabilityID&gt;&lt;CapabilityValue&gt;{dim}&lt;/CapabilityValue&gt;&lt;/DeviceStatus&gt;'.format(devID=self.light_get_id(light),state=state,dim=dim)
-        return self.bridge.SetDeviceStatus(DeviceStatusList=sendState)
+        result = aio.Future
+        future = self.bridge.SetDeviceStatus(DeviceStatusList=sendState)
+        aio.ensure_future(self.light_set_state_bottom(future,result))
+        return result
+
+    async def light_set_state_bottom(self,future, result_fut):
+        await future
+        try:
+            result_fut.set_result(future.result())
+        except Exception as e:
+            result_fut.set_exception(e)
+
 
     def group_set_state(self, group, state=None, dim=None):
         if state == None:
@@ -105,5 +141,15 @@ class Bridge(Device):
             dim = self.group_get_state(group).get('dim')
 
         sendState = '&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;DeviceStatus&gt;&lt;IsGroupAction&gt;YES&lt;/IsGroupAction&gt;&lt;DeviceID available=&quot;YES&quot;&gt;{groupID}&lt;/DeviceID&gt;&lt;CapabilityID&gt;10006&lt;/CapabilityID&gt;&lt;CapabilityValue&gt;{state}&lt;/CapabilityValue&gt;&lt;CapabilityID&gt;10008&lt;/CapabilityID&gt;&lt;CapabilityValue&gt;{dim}&lt;/CapabilityValue&gt;&lt;/DeviceStatus&gt;'.format(groupID=self.group_get_id(group),state=state,dim=dim)
+        result = aio.Future
+        future = self.bridge.SetDeviceStatus(DeviceStatusList=sendState)
+        aio.ensure_future(self.group_set_state_bottom(future,result))
+        return result
 
-        return self.bridge.SetDeviceStatus(DeviceStatusList=sendState)
+    async def group_set_state_bottom(self,future, result_fut):
+        await future
+        try:
+            result_fut.set_result(future.result())
+        except Exception as e:
+            result_fut.set_exception(e)
+

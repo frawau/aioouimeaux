@@ -3,7 +3,7 @@ import argparse
 import sys
 import asyncio
 
-from aioouimeaux.environment import Environment
+from aioouimeaux.wemo import WeMo
 from aioouimeaux.utils import matcher
 
 
@@ -20,8 +20,8 @@ def mainloop(name):
             print("{} state is {state}".format(
                 sender.name, state="on" if sender.get_state() else "off"))
 
-    env = Environment(callback=found)
-    env.start()
+    wemo = WeMo(callback=found)
+    wemo.start()
 
 
 

@@ -2,6 +2,17 @@
 Credits
 =======
 
+aioouimeaux
+
+^ François Wautier <francois@wautier.eu>
+
+Contributors
+-------------
+
+
+
+ouimeaux
+
 Development Lead
 ----------------
 

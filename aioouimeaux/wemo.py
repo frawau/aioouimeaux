@@ -15,7 +15,6 @@ from aioouimeaux.subscribe import SubscriptionRegistry
 from aioouimeaux.utils import matcher
 from functools import partial
 
-import inspect
 
 _MARKER = object()
 _NOOP = lambda *x: None
@@ -32,7 +31,7 @@ class StopBroadcasting(Exception):
 class UnknownDevice(Exception):
     pass
 
-class Environment(object):
+class WeMo(object):
     def __init__(self, callback=_NOOP, with_discovery=True, with_subscribers=True):
         """
         Create a WeMo environment.
@@ -149,6 +148,13 @@ class Environment(object):
             return
         self._callback(device)
 
+    def list_devices(self):
+        """
+        List switches discovered in the environment.
+        """
+        return [x for x in self.devices.keys()]
+
+
     def list_switches(self):
         """
         List switches discovered in the environment.
@@ -189,6 +195,7 @@ class Environment(object):
         Get a switch by name.
         """
         try:
+            assert name in self.list_switches()
             return self.devices[name]
         except KeyError:
             raise UnknownDevice(name)
@@ -198,6 +205,7 @@ class Environment(object):
         Get a motion by name.
         """
         try:
+            assert name in self.list_motions()
             return self.devices[name]
         except KeyError:
             raise UnknownDevice(name)
@@ -207,6 +215,7 @@ class Environment(object):
         Get a bridge by name.
         """
         try:
+            assert name in self.list_bridges()
             return self.devices[name]
         except KeyError:
             raise UnknownDevice(name)
@@ -216,6 +225,7 @@ class Environment(object):
         Get a maker by name.
         """
         try:
+            assert name in self.list_makers()
             return self.devices[name]
         except KeyError:
             raise UnknownDevice(name)
@@ -229,24 +239,35 @@ if __name__ == "__main__":
     def register_device(dev):
         dev.register_callback("statechange", report_status)
         print(f"Got new device {dev.name}")
-        dev.explain()
+        #dev.explain()
 
     async def dotoggle(env):
         while True:
             await aio.sleep(5)
-            print("Toggling")
-            for dev in env.devices.values():
-                dev.toggle()
+            for dname in env.list_switches():
+                try:
+                    dev = env.get_switch(dname)
+                    print(f"Toggling {dev.name}")
+                    resu = dev.toggle()
+                    await resu
+                    val = resu.result()
+                    #print(f"{val}")
+                    #mac = dev.basicevent.GetMacAddr()
+                    #await mac
+                    #print(f"MAC is {mac.result()}")
+                except:
+                    pass
 
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.WARNING)
     loop = aio.get_event_loop()
-    environment = Environment(callback=register_device)
-    environment.start()
-    aio.ensure_future(dotoggle(environment))
+    wemo = WeMo(callback=register_device)
+    wemo.start()
+    #fut = aio.ensure_future(dotoggle(wemo))
     try:
         loop.run_forever()
     except KeyboardInterrupt:
         print("\n", "Exiting at user's request")
     finally:
+        #fut.cancel()
         # Close the server
         loop.close()

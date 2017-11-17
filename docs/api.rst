@@ -2,52 +2,81 @@
 Python API
 ===========
 
-Environment
+WeMo
 -----------
-The main interface is presented by an ``Environment``, which optionally accepts
+The main interface is presented by a ``WeMo``, which optionally accepts
 functions called when a Switch, Motion o other device is identified::
 
-    >>> from ouimeaux.environment import Environment
-    >>>
-    >>> def on_switch(switch):
-    ...     print "Switch found!", switch.name
-    ...
-    >>> def on_motion(motion):
-    ...     print "Motion found!", motion.name
-    ...
-    >>> env = Environment(on_switch, on_motion)
+    import asyncio as aio
+    from aioouimeaux.wemo import WeMo
+
+    def on_device(device):
+        if device.device_type == "Switch":
+            print(f"Switch found! {device.name}")
+        elif device.device_type == "Switch":
+            print(f"Motion found! {device.name}")
+
+    loop = aio.get_event_loop()
+    wemo = WeMo(on_device)
 
 Start up the server to listen for responses to the discovery broadcast::
 
-    >>> env.start()
+    wemo.start()
+    loop.run_forever()
 
-Discovery of all WeMo devices in an environment is then straightforward; simply
-pass the length of time (in seconds) you want discovery to run::
+Discovery of all WeMo devices is then done automatically. If repeated discovery
+is needed it can be triggered with "discovery" pass the length of time (in seconds)
+you want discovery to run::
 
-    >>> env.discover(seconds=3)
-    Switch found! Living Room
+    wemo.discover(seconds=3)
 
-During that time, the ``Environment`` will continually broadcast search requests
+During that time, ``WeMo`` will broadcast search requests every second
 and parse responses. At any point, you can see the names of discovered devices::
 
-    >>> env.list_switches()
+    print(wemo.list_switches())
     ['Living Room', 'TV Room', 'Front Closet']
-    >>> env.list_motions()
+    print(wemo.list_motions())
     ['Front Hallway']
 
 Devices can be retrieved by using ``get_switch`` and ``get_motion`` methods::
 
-    >>> switch = env.get_switch('TV Room')
-    >>> switch
+    switch = env.get_switch('TV Room')
+    print(switch)
     <WeMo Switch "TV Room">
 
 Devices
 -------
+Every device has a ``device_type`` attributes. Yhe value is one of
+    - Switch
+    - Motion
+    - Bridge
+    - Insight
+    - Maker
+
+One can register a callable/coroutine to be executed when a given event occurs.
+At this time only the "statechange" event is known::
+
+    import asyncio as aio
+    from aioouimeaux.wemo import WeMo
+
+    def report_status(device):
+        """The callback function will get a device as parameter."""
+        print(f"{device.device_type} {device.name} status is now {device.get_state() and 'On' or 'Off'}")
+
+    def on_device(device):
+        print(f"Device found! {device.name}")
+        device.register_callback("statechange", report_status)
+
+    loop = aio.get_event_loop()
+    wemo = WeMo(on_device)
+    wemo.start()
+    loop.run_forever()
+
 All devices have an ``explain()`` method, which will print out a list of all
 available services, as well as the actions and arguments to those actions
 on each service::
 
-    >>> switch.explain()
+    switch.explain()
 
     basicevent
     ----------
@@ -60,107 +89,37 @@ on each service::
     ...
 
 Services and actions are available via simple attribute access. Calling actions
-returns a dictionary of return values::
+returns a ``future`` that will be set with a dictionary of return values::
 
-    >>> switch.basicevent.SetBinaryState(BinaryState=0)
-    {'BinaryState': 0}
+    async def show_result(future):
+        await future
+        print(future.result())
 
-Events
-------
-.. warning:: This events framework is deprecated and will be removed prior to the 1.0 release. Please use the signals framework.
+    future = switch.basicevent.SetBinaryState(BinaryState=0)
+    xx = aio.ensure_future(show_result(future))
 
-By default, ouimeaux subscribes to property change events on discovered
-devices (this can be disabled by passing ``with_subscribers=False`` to the
-``Environment`` constructor). You can register callbacks that will be called
-when switches and motions change state (on/off, or motion detected)::
-
-    >>> def on_motion(value):
-    ...     print "Motion detected!"
-    ...
-    >>> env.get_motion('Front Hallway').register_listener(on_motion)
-    >>> env.wait(timeout=60)
-
-Note the use of ``Environment.wait()`` to give control to the event loop for
-events to be detected. A timeout in seconds may optionally be specified;
-default is no timeout.
-
-Signals
--------
-A simple signals framework (using pysignals_) is included to replace the
-rudimentary events in earlier releases. These are found in the
-`ouimeaux.signals` module. Signal handlers may be registered using the
-``receiver`` decorator and must have the signature ``sender, **kwargs``::
-
-    @receiver(devicefound)
-    def handler(sender, **kwargs):
-        print "Found device", sender
-
-
-Where ``sender`` is the relevant object (in most cases, the device). Signals
-may also have handlers registered using ``signal.connect(handler)``::
-
-    def handler(sender, **kwargs):
-        pass
-
-    statechange.connect(sender)
-
-Available signals:
-
-    ``discovered``
-        Fires when a device responds to the broadcast request. Includes:
-         - ``sender``: The UPnP broadcast component
-         - ``address``: The address of the responding device
-         - ``headers``: The response headers
-
-    ``devicefound``
-        Sent when a device is found and registered into the environment. Includes:
-         - ``sender``: The device found
-
-    ``subscription``
-        Sent when a device sends an event as the result of a subscription. Includes:
-         - ``sender``: The device that sent the event
-         - ``type``: The type of the event send (e.g., ``BinaryState``)
-         - ``value``: The value associated with the event
-
-    ``statechange``
-        Sent when a device indicates it has detected a state change. Includes:
-         - ``sender``: The device that changed state
-         - ``state``: The resulting state (0 or 1)
-
-
-See the pysignals_ documentation for further information.
-
-Example: Registering a handler for when a Light Switch switches on or off::
-
-    from ouimeaux.signals import statechange, receiver
-
-    env = Environment(); env.start()
-    env.discover(5)
-
-    switch = env.get_switch('Porch Light')
-
-    @receiver(statechange, sender=switch)
-    def switch_toggle(device, **kwargs):
-        print device, kwargs['state']
-
-    env.wait()  # Pass control to the event loop
-
-See the examples_ for a more detailed implementation.
-
-.. _pysignals: https://github.com/theojulienne/PySignals
+Devices can take time to be initialized. To verify that a device has been initialized, then
+``initialized`` attribute is a future that is set once initialization is done.
 
 Switches
 --------
 Switches have three shortcut methods defined: ``get_state``, ``on`` and
-``off``. Switches also have a ``blink`` method, which accepts a number of
-seconds. This will toggle the device, wait the number of seconds, then toggle
-it again. Remember to call ``env.wait()`` to give control to the event loop.
+``off``. Those methods return a ``future``
 
 Motions
 -------
 Motions have one shortcut method defined: ``get_state``.
 
-Insight
+Bridge (Not tested)
+------
+Bridges have these shortcut methods. Returning ``future``
+
+    bridge_get_lights
+    bridge_get_groups
+    light_set_state
+    light_set_group
+
+Insight (Not tested)
 -------
 In addition to the normal Switch methods, Insight switches have several metrics
 exposed::
@@ -171,20 +130,43 @@ exposed::
     insight.on_for
     insight.today_standby_time
 
-Device Cache
-------------
-By default, device results are cached on the filesystem for quicker
-initialization. This can be disabled by passing ``with_cache=False`` to the
-``Environment`` constructor. On a related note, if you want to use the cache
-exclusively, you can pass ``with_discovery=False`` to the ``Environment``
-constructor to disable M-SEARCH requests.
-
-You can clear the device cache either by deleting the file ``~/.wemo/cache``
-or by using the ``wemo clear`` command.
 
 Examples
 --------
-Detailed examples_ are included in the source demonstrating common use cases.
+The module can be ran::
+
+    python3 -m aioouimeaux
+
+will give an output similar to this::
+
+    Hit "Enter" to start
+    Use Ctrl-C to quit
+    Motion Motion status is now Off
+    Switch Test Switch 3 status is now Off
+    Switch Test Switch 1 status is now On
+    Switch Test Switch 2 status is now On
+    Motion Motion status is now Off
+    Select Device:
+            [1]     Motion
+            [2]     Test Switch 1
+            [3]     Test Switch 2
+            [4]     Test Switch 3
+
+    Your choice:2
+    Select Function for Test Switch 1:
+            [1]     Power (0 or 1)
+            [2]     Get Home Id
+            [3]     Get MAC Address
+            [4]     Get Device Id
+            [5]     Get Serial Number
+            [6]     Explain
+            [7]     Function X (e.g. basicevent.GetHomeInfo see 'explain')
+
+            [0]     Back to device selection
+
+
+
+Some examples_ are included in the source demonstrating common use cases.
 Suggestions (or implementations) for more are always welcome.
 
-.. _examples: https://github.com/iancmcc/ouimeaux/tree/develop/ouimeaux/examples
+.. _examples: https://github.com/frawau/aioouimeaux/tree/master/aioouimeaux/examples
