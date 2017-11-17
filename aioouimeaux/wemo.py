@@ -231,43 +231,4 @@ class WeMo(object):
             raise UnknownDevice(name)
 
 
-if __name__ == "__main__":
 
-    def report_status(dev):
-        print(f"\n{dev.name} status is now {dev.get_state() and 'On' or 'Off'}\n")
-
-    def register_device(dev):
-        dev.register_callback("statechange", report_status)
-        print(f"Got new device {dev.name}")
-        #dev.explain()
-
-    async def dotoggle(env):
-        while True:
-            await aio.sleep(5)
-            for dname in env.list_switches():
-                try:
-                    dev = env.get_switch(dname)
-                    print(f"Toggling {dev.name}")
-                    resu = dev.toggle()
-                    await resu
-                    val = resu.result()
-                    #print(f"{val}")
-                    #mac = dev.basicevent.GetMacAddr()
-                    #await mac
-                    #print(f"MAC is {mac.result()}")
-                except:
-                    pass
-
-    logging.basicConfig(level=logging.WARNING)
-    loop = aio.get_event_loop()
-    wemo = WeMo(callback=register_device)
-    wemo.start()
-    #fut = aio.ensure_future(dotoggle(wemo))
-    try:
-        loop.run_forever()
-    except KeyboardInterrupt:
-        print("\n", "Exiting at user's request")
-    finally:
-        #fut.cancel()
-        # Close the server
-        loop.close()
