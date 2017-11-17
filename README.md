@@ -21,9 +21,10 @@ It has been forked here since it is a significant change. It has been renamed to
 clearly indicate the difference.
 
 ## Installation
-...
+```
 $ sudo pip3 install aioouimeaux
 
+```
 If you want to use a virtual environement
 ```
 $ sudo pip3 install virtualenv
