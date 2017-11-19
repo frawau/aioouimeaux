@@ -39,15 +39,25 @@ listoffunc["Get Device Id"] = (lambda dev: dev.basicevent.GetDeviceId(),"")
 listoffunc["Get Serial Number"] = (lambda dev: dev.basicevent.GetSerialNo(),"")
 
 async def showinfo(future,info,dev,key=""):
-    await future
-    #try:
-    resu = future.result()
-    if key:
-        print(f"\n{dev.name}: {info} is {resu[key]}")
-    else:
-        print(f"\n{dev.name}: {info} is {resu}")
-    #except Exception as e:
-        #print(f"\n{dev.name}: {info} failed with {e}")
+    try:
+        await future
+        resu = future.result()
+        if key:
+            print(f"\n{dev.name}: {info} is {resu[key]}")
+        else:
+            print(f"\n{dev.name}: {info} is {resu}")
+    except Exception as e:
+        print(f"\nException for {dev.name}: {info} failed with {e}")
+        unregister_device(dev)
+
+async def await_result(future,dev):
+    try:
+        await future
+        resu = future.result()
+        #TODO Could log on debug
+    except Exception as e:
+        print(f"\nException for {dev.name}: On/Off failed with {e}")
+        unregister_device(dev)
 
 def readin():
     """Reading from stdin and displaying menu"""
@@ -69,13 +79,13 @@ def readin():
                         if selection == 1:
                             if len(lov) >1:
                                 if lov[1].lower() in ["1","on","true"]:
-                                    wemodoi.on()
+                                    future = wemodoi.on()
                                 else:
-                                    wemodoi.off()
+                                    future = wemodoi.off()
+                                xx = aio.ensure_future(await_result(future,wemodoi))
                                 wemodoi=None
                             else:
                                 print("Error: For power you must indicate on or off\n")
-                            return
                         selection -= 1
 
                     if selection > (len(listoffunc)+2):
@@ -94,36 +104,40 @@ def readin():
                                     print(f"Unknown function {lov[1].strip()}")
                                     break
                             if fcnt:
-                                param={}
-                                if len(lov)>2:
+                                if callable(fcnt):
                                     param={}
-                                    key=None
-                                    for x in range(2,len(lov)):
+                                    if len(lov)>2:
+                                        param={}
+                                        key=None
+                                        for x in range(2,len(lov)):
+                                            if key:
+                                                param[key]=lov[x]
+                                                key=None
+                                            else:
+                                                key=lov[x]
                                         if key:
-                                            param[key]=lov[x]
-                                            key=None
-                                        else:
-                                            key=lov[x]
-                                    if key:
-                                        param[key]=""
-                                if param:
-                                    future = fcnt(**param)
+                                            param[key]=""
+                                    if param:
+                                        future = fcnt(**param)
+                                    else:
+                                        future = fcnt()
+                                    xx = aio.ensure_future(showinfo(future,".".join(lok),wemodoi,""))
                                 else:
-                                    future = fcnt()
-                                xx = aio.ensure_future(showinfo(future,".".join(lok),wemodoi,""))
+                                    print(getattr(wemodoi,fcnt,None))
                                 wemodoi = None
-
                         else:
                             print("We need a function to execute")
-                    else:
+                    elif selection>0:
                         what = [x for x in listoffunc.keys()][selection-1]
-                        fnct,key = listoffunc[what]
+                        fcnt,key = listoffunc[what]
                         what = what.replace("Get","").strip()
-                        future = fnct(wemodoi)
+                        future = fcnt(wemodoi)
                         xx = aio.ensure_future(showinfo(future,what,wemodoi,key))
                         wemodoi = None
+                    else:
+                        wemodoi = None
             #except:
-                #print ("\nError: Selection must be a number.\n")
+            #print (f"\nError: Selection must be a number between 0 and {len(listoffunc)+3}.\n")
         else:
             try:
                 if int(lov[0]) > 0:
@@ -169,10 +183,25 @@ def register_device(dev):
     dev.register_callback("statechange", report_status)
     #dev.explain()
 
+def unregister_device(dev):
+    global MyWeMo
+    print(f"Device {dev} with {dev.basicevent.eventSubURL}")
+    MyWeMo.device_gone(dev)
+
+async def discovery():
+    global MyWeMo
+
+    while True:
+        await aio.sleep(60)
+        #print("Looking for devices")
+        MyWeMo.discover()
+
+
 loop = aio.get_event_loop()
 MyWeMo = WeMo(callback=register_device)
 MyWeMo.start()
 try:
+    disc = aio.ensure_future(discovery())
     loop.add_reader(sys.stdin,readin)
     print("Hit \"Enter\" to start")
     print("Use Ctrl-C to quit")
@@ -182,4 +211,6 @@ except KeyboardInterrupt:
 finally:
     # Close the reader
     loop.remove_reader(sys.stdin)
+    disc.cancel()
+    loop.run_until_complete(aio.sleep(1))
     loop.close()

@@ -24,6 +24,7 @@ SUCCESS = b'<html><body><h1>200 OK</h1></body></html>'
 class SubscriptionRegistry(object):
     def __init__(self):
         self._devices = {}
+        self._subscriptions = {}
         self._callbacks = defaultdict(list)
         self.port = randint(8300, 8990)
 
@@ -34,33 +35,47 @@ class SubscriptionRegistry(object):
             return
         log.info("Subscribing to basic events from %r", device)
         self._devices[device.host] = device
-        self._do_resubscribe(device.basicevent.eventSubURL)
+        self._do_resubscribe(device, device.basicevent.eventSubURL)
 
-    def _do_resubscribe(self, url, sid=None):
-        aio.ensure_future(self._resubscribe(url,sid))
+    def unregister(self, device):
+        if device.host in self._subscriptions:
+            try:
+                self._subscriptions[device.host].cancel()
+                del self._subscriptions[device.host]
+            except:
+                pass
+            finally:
+                del self._devices[device.host]
 
-    async def _resubscribe(self, url, sid=None):
-        headers = {'TIMEOUT': 'Second-%d' % 1800}
-        if sid is not None:
-            headers['SID'] = sid
-        else:
-            host = get_ip_address()
-            headers.update({
-                "CALLBACK": '<http://%s:%d>'%(host, self.port),
-                "NT": "upnp:event"
-            })
-        response = await requests_request(method="SUBSCRIBE", url=url,
-                                headers=headers)
-        if response.status == 412 and sid:
-            # Invalid subscription ID. Send an UNSUBSCRIBE for safety and
-            # start over.
-            await requests_request(method='UNSUBSCRIBE', url=url,
-                             headers={'SID': sid})
-            return await self._resubscribe(url)
-        timeout = int(response.headers.get('timeout', '1801').replace(
-            'Second-', ''))
-        sid = response.headers.get('sid', sid)
-        aio.get_event_loop().call_later(int(timeout * 0.75), partial(self._do_resubscribe,url, sid))
+    def _do_resubscribe(self, device, url, sid=None):
+        if device.host not in self._subscriptions:
+            self._subscriptions[device.host] = aio.ensure_future(self._resubscribe(device,url,sid))
+
+    async def _resubscribe(self, device, url, sid=None):
+        try:
+            headers = {'TIMEOUT': 'Second-%d' % 1800}
+            if sid is not None:
+                headers['SID'] = sid
+            else:
+                host = get_ip_address()
+                headers.update({
+                    "CALLBACK": '<http://%s:%d>'%(host, self.port),
+                    "NT": "upnp:event"
+                })
+            response = await requests_request(method="SUBSCRIBE", url=url,
+                                    headers=headers)
+            if response.status == 412 and sid:
+                # Invalid subscription ID. Send an UNSUBSCRIBE for safety and
+                # start over.
+                await requests_request(method='UNSUBSCRIBE', url=url,
+                                headers={'SID': sid})
+                return await self._resubscribe(url)
+            timeout = int(response.headers.get('timeout', '1801').replace(
+                'Second-', ''))
+            sid = response.headers.get('sid', sid)
+            self._subscriptions[device.host] = aio.get_event_loop().call_later(int(timeout * 0.75), partial(self._do_resubscribe,url, sid))
+        except:
+            del self._subscriptions[device.host]
 
     def _handle(self, environ, start_response):
         device = self._devices.get(environ['REMOTE_ADDR'])

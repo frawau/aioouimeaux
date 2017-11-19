@@ -23,6 +23,7 @@ log = logging.getLogger(__name__)
 reqlog = logging.getLogger("requests")
 reqlog.disabled = True
 
+_LOTYPES=["Switch","Motion","Bridge", "Maker"]
 
 class StopBroadcasting(Exception):
     pass
@@ -32,12 +33,14 @@ class UnknownDevice(Exception):
     pass
 
 class WeMo(object):
-    def __init__(self, callback=_NOOP, with_discovery=True, with_subscribers=True):
+    def __init__(self, callback=_NOOP, types = _LOTYPES, with_discovery=True, with_subscribers=True):
         """
         Create a WeMo environment.
 
         @param callback:         A function to be called when a new device is discovered.
         @type callback:          function
+        @param types:            A list of the types of devices we want discovered.
+        @type types:             list
         @param with_discovery:   Whether to start device discovery.
         @type with_discovery:    bool
         @param with_subscribers: Whether to register for events with discovered devices.
@@ -52,6 +55,7 @@ class WeMo(object):
         self._with_discovery = with_discovery
         self._with_subscribers = with_subscribers
         self._callback = callback
+        self._list_of_types = types
         self.devices = {}
 
     def __iter__(self):
@@ -109,17 +113,17 @@ class WeMo(object):
         address = kwargs['address']
         headers = kwargs['headers']
         usn = headers['usn']
-        if usn.startswith('uuid:Socket'):
+        if usn.startswith('uuid:Socket') and "Switch" in self._list_of_types:
             klass = Switch
-        elif usn.startswith('uuid:Lightswitch'):
+        elif usn.startswith('uuid:Lightswitch') and "Switch" in self._list_of_types:
             klass = LightSwitch
-        elif usn.startswith('uuid:Insight'):
+        elif usn.startswith('uuid:Insight') and "Switch" in self._list_of_types:
             klass = Insight
-        elif usn.startswith('uuid:Sensor'):
+        elif usn.startswith('uuid:Sensor') and "Motion" in self._list_of_types:
             klass = Motion
-        elif usn.startswith('uuid:Bridge'):
+        elif usn.startswith('uuid:Bridge') and "Bridge" in self._list_of_types:
             klass = Bridge
-        elif usn.startswith('uuid:Maker'):
+        elif usn.startswith('uuid:Maker') and "maker" in self._list_of_types:
         	klass = Maker
         else:
             log.info("Unrecognized device type. USN={0}".format(usn))
@@ -132,6 +136,17 @@ class WeMo(object):
         await device.initialized
         log.info("Found device %r at %s" % (device, address))
         self._process_device(device)
+
+    def device_gone(self, device):
+        #try:
+        if self._with_discovery:
+            self.upnp.connection_lost(device._config.UDN)
+        if self._with_subscribers:
+            self.registry.unregister(device)
+        del self.devices[device.name]
+        #except:
+            #pass
+
 
     def _process_device(self, device):
         self.devices[device.name] = device

@@ -90,11 +90,13 @@ class UPnP(aio.Protocol):
                 else:
                     self.clients[usn] = headers
 
-    def error_received(self, exc):
+    def error_received(self, name):
         pass
         #print('Error received:', exc)
 
-    def connection_lost(self, exc):
+    def connection_lost(self, udn):
+        udn = udn.split(":")[1]
+        del self.clients[udn]
         pass
 
     def broadcast(self,seconds):
