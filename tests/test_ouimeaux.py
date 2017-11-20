@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-test_ouimeaux
+test_aioouimeaux
 ----------------------------------
 
 Tests for `ouimeaux` module.

@@ -2,7 +2,7 @@
 
 aioouimeaux
 
-Release 0.1.0 (Nov 20, 2017
+Release 0.1.0b1 (Nov 20, 2017
 +++++++++++++++++++++++++++++
 - Modified the code to use asyncio
     - suppressed use of gevent

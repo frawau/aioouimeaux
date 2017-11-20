@@ -35,6 +35,8 @@ class SubscriptionRegistry(object):
             return
         log.info("Subscribing to basic events from %r", device)
         self._devices[device.host] = device
+        self.on(device, 'BinaryState',
+                    device._update_state)
         self._do_resubscribe(device, device.basicevent.eventSubURL)
 
     def unregister(self, device):
@@ -42,6 +44,7 @@ class SubscriptionRegistry(object):
             try:
                 self._subscriptions[device.host].cancel()
                 del self._subscriptions[device.host]
+                del self._callbacks[device]
             except:
                 pass
             finally:
@@ -73,7 +76,7 @@ class SubscriptionRegistry(object):
             timeout = int(response.headers.get('timeout', '1801').replace(
                 'Second-', ''))
             sid = response.headers.get('sid', sid)
-            self._subscriptions[device.host] = aio.get_event_loop().call_later(int(timeout * 0.75), partial(self._do_resubscribe,url, sid))
+            self._subscriptions[device.host] = aio.get_event_loop().call_later(int(timeout * 0.75), partial(self._do_resubscribe,device, url, sid))
         except:
             del self._subscriptions[device.host]
 

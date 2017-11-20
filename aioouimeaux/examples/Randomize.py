@@ -12,7 +12,6 @@ async def runme(wemo):
     print("WeMo Randomizer")
     print("---------------")
     print(wemo.list_switches())
-    print(wemo.list_motions())
     print("---------------")
     while True:
         # http://stackoverflow.com/questions/306400/how-do-i-randomly-select-an-item-from-a-list-using-python
@@ -27,11 +26,13 @@ async def doclose(wemo):
             wemo.get_switch(switch).off()
     await aio.sleep(1)
 
+def register_device(device):
+    xx=device.get_state()
 
 # http://pydoc.net/Python/ouimeaux/0.7.3/ouimeaux.examples.watch/
 if __name__ == "__main__":
     loop = aio.get_event_loop()
-    wemo = WeMo()
+    wemo = WeMo(types=["Switch"])
     wemo.start()
     task = loop.create_task(runme(wemo))
     # TODO: run from 10am to 10pm

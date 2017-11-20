@@ -5,7 +5,7 @@ import os
 import sys
 
 here = lambda *a: os.path.join(os.path.dirname(__file__), *a)
-
+version='0.1.0b1'
 
 try:
     from setuptools import setup, find_packages
@@ -22,12 +22,13 @@ requirements = [x.strip() for x in open(here('requirements.txt')).readlines()]
 
 setup(
     name='aioouimeaux',
-    version='0.1.0',
+    version=version,
     description='Open source control for Belkin WeMo devices',
     long_description=readme + '\n\n' + history,
     author='François Wautier',
     author_email='francois@wautier.eu',
     url='https://github.com/frawau/aioouimeaux',
+    download_url='https://github.com/frawau/aioouimeaux/archive/'+version+'.tar.gz',
     packages=find_packages(),
     #packages=[
         #'aioouimeaux',packages=find_packages()
@@ -37,9 +38,10 @@ setup(
     install_requires=requirements,
     license="BSD",
     zip_safe=False,
-    keywords='aioouimeaux',
+    python_requires='>=3.6',
+    keywords='aioouimeaux WeMo automation',
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 4 - Beta',
         'Topic :: Home Automation',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',

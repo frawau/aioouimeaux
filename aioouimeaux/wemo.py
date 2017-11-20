@@ -93,9 +93,9 @@ class WeMo(object):
         #print ("Awaiting registry")
         #await self.registry
         #self.registry = self.registry.result()
-        await self.upnp
-        self.upnp = self.upnp.result()
         if self._with_discovery:
+            await self.upnp
+            self.upnp = self.upnp.result()
             self.discover()
 
 
@@ -152,8 +152,8 @@ class WeMo(object):
         self.devices[device.name] = device
         if self._with_subscribers:
             self.registry.register(device)
-            self.registry.on(device, 'BinaryState',
-                             device._update_state)
+            #self.registry.on(device, 'BinaryState',
+                             #device._update_state)
         try:
             if isinstance(device, Bridge):
                 pass

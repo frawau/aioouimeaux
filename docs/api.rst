@@ -5,7 +5,7 @@ Python API
 WeMo
 -----------
 The main interface is presented by a ``WeMo``, which optionally accepts
-functions called when a Switch, Motion o other device is identified::
+functions called when a Switch, Motion or other device is identified::
 
     import asyncio as aio
     from aioouimeaux.wemo import WeMo
@@ -25,7 +25,7 @@ Start up the server to listen for responses to the discovery broadcast::
     loop.run_forever()
 
 Discovery of all WeMo devices is then done automatically. If repeated discovery
-is needed it can be triggered with "discovery" pass the length of time (in seconds)
+is needed it can be triggered with "discovery", pass the length of time (in seconds)
 you want discovery to run::
 
     wemo.discover(seconds=3)
@@ -43,6 +43,9 @@ Devices can be retrieved by using ``get_switch`` and ``get_motion`` methods::
     switch = env.get_switch('TV Room')
     print(switch)
     <WeMo Switch "TV Room">
+
+WeMo can limit the types of devices it controls. The argument __types__is a list of the ``device_type`` (see below)
+that should be detected, ignoring the others.
 
 Devices
 -------
