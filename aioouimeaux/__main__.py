@@ -188,20 +188,11 @@ def unregister_device(dev):
     print(f"Device {dev} with {dev.basicevent.eventSubURL}")
     MyWeMo.device_gone(dev)
 
-async def discovery():
-    global MyWeMo
-
-    while True:
-        await aio.sleep(60)
-        #print("Looking for devices")
-        MyWeMo.discover()
-
 
 loop = aio.get_event_loop()
 MyWeMo = WeMo(callback=register_device)
 MyWeMo.start()
 try:
-    disc = aio.ensure_future(discovery())
     loop.add_reader(sys.stdin,readin)
     print("Hit \"Enter\" to start")
     print("Use Ctrl-C to quit")
@@ -211,6 +202,6 @@ except KeyboardInterrupt:
 finally:
     # Close the reader
     loop.remove_reader(sys.stdin)
-    disc.cancel()
+    MyWeMo.stop()
     loop.run_until_complete(aio.sleep(1))
     loop.close()

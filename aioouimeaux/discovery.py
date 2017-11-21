@@ -12,6 +12,7 @@ UPNP6_ADDR = "ff05::c"
 #UPNP6_ADDR = "ff08::c"
 #UPNP6_ADDR = "ff0e::c"
 
+_DISCOVERYTIMEOUT = 120
 
 class UPnPLoopbackException(Exception):
     """
@@ -99,14 +100,24 @@ class UPnP(aio.Protocol):
         del self.clients[udn]
         pass
 
-    def broadcast(self,seconds):
-        if seconds == 0:
-            self.task = None
-            return
-        self._broadcast()
-        self.task = self.loop.call_later(1,partial(self.broadcast,seconds-1))
+    def broadcast(self,seconds,timeout=_DISCOVERYTIMEOUT):
+        self.task= aio.get_event_loop().create_task(self._do_broadcast(seconds,timeout))
 
+    async def _do_broadcast(self,seconds,timeout):
+        count = seconds
+        while True:
+            if count == 0:
+                count = seconds
+                await aio.sleep(timeout)
+            self._broadcast()
+            count -= 1
+            await aio.sleep(1)
 
+    def close(self):
+        try:
+            self.task.cancel()
+        except:
+            pass
 
 def test():
     logging.basicConfig(level=logging.DEBUG)

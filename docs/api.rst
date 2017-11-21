@@ -19,19 +19,15 @@ functions called when a Switch, Motion or other device is identified::
     loop = aio.get_event_loop()
     wemo = WeMo(on_device)
 
-Start up the server to listen for responses to the discovery broadcast::
+Start up the server to send discovery broadcasts and listen for responses::
 
     wemo.start()
     loop.run_forever()
 
-Discovery of all WeMo devices is then done automatically. If repeated discovery
-is needed it can be triggered with "discovery", pass the length of time (in seconds)
-you want discovery to run::
+Discovery of all WeMo devices is then done automatically. The discovery process will be repeated
+every 120 seconds with 3 messages broadcast over 3 seconds.
 
-    wemo.discover(seconds=3)
-
-During that time, ``WeMo`` will broadcast search requests every second
-and parse responses. At any point, you can see the names of discovered devices::
+At any point, you can see the names of discovered devices::
 
     print(wemo.list_switches())
     ['Living Room', 'TV Room', 'Front Closet']
@@ -46,6 +42,10 @@ Devices can be retrieved by using ``get_switch`` and ``get_motion`` methods::
 
 WeMo can limit the types of devices it controls. The argument __types__is a list of the ``device_type`` (see below)
 that should be detected, ignoring the others.
+
+When closing the application one should stop the ``WeMo`` to ensure that all tasks are properly terminated::
+
+    wemo.stop()
 
 Devices
 -------

@@ -99,7 +99,13 @@ class WeMo(object):
             self.discover()
 
 
-    def discover(self, seconds=2):
+    def stop(self):
+        if self._with_subscribers:
+            self.registry.close()
+        if self._with_discovery:
+            self.upnp.close()
+
+    def discover(self, seconds=3):
         """
         Discover devices in the environment.
 
@@ -107,7 +113,7 @@ class WeMo(object):
         @type seconds: int
         """
         log.info("Discovering devices")
-        self.upnp.broadcast(2)
+        self.upnp.broadcast(seconds)
 
     def _found_device(self, sender, **kwargs):
         address = kwargs['address']
