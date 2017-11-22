@@ -4,4 +4,4 @@ class Motion(Device):
     device_type = "Motion"
 
     def __repr__(self):
-        return f'<WeMo Motion "{self.name}">'
+        return '<WeMo Motion "{}">'.format(self.name)

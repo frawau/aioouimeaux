@@ -12,7 +12,7 @@ UPNP6_ADDR = "ff05::c"
 #UPNP6_ADDR = "ff08::c"
 #UPNP6_ADDR = "ff0e::c"
 
-_DISCOVERYTIMEOUT = 120
+_DISCOVERYTIMEOUT = 360
 
 class UPnPLoopbackException(Exception):
     """
@@ -28,9 +28,9 @@ class upnp_info(object):
         self.properties = {}
 
     def __repr__(self):
-        repr = f'name:\t{self.name}\ntype:\t{self.type}\nport:\t{self.port}\naddress:{self.address}\nmac:\t{self.mac}\nproperties:\n'
+        repr = 'name:\t{}\ntype:\t{}\nport:\t{}\naddress:{}\nmac:\t{}\nproperties:\n'.format(self.name,self.type, self.port, self.address, self.mac)
         for x,y in self.properties.items():
-            repr += f"\t{x}:\t{y}\n"
+            repr += "\t{}:\t{}\n".format(x,y)
         return repr
 
 class UPnP(aio.Protocol):
@@ -84,7 +84,7 @@ class UPnP(aio.Protocol):
             if usn is not None:
                 usn = usn.split(":")[1]
                 if usn not in self.clients:
-                    log.debug(f"Found WeMo at {usn}")
+                    log.debug("Found WeMo at {}".format(usn))
                     self.clients[usn] = headers
                     if self.handler:
                         self.handler(self,address=addr,headers=headers)

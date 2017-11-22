@@ -52,12 +52,16 @@ class SubscriptionRegistry(object):
 
     def _do_resubscribe(self, device, url, sid=None):
         if device.host in self._subscriptions:
-            self._subscriptions[device.host].cancel()
+            try:
+                self._subscriptions[device.host].cancel()
+            except:
+                pass
         self._subscriptions[device.host] = aio.get_event_loop().create_task(self._resubscribe(device,url,sid))
 
     async def _resubscribe(self, device, url, sid=None):
         try:
             while True:
+                sidwaschanged = False
                 headers = {'TIMEOUT': 'Second-%d' % _SUBSCRIBETIMEOUT}
                 if sid is not None:
                     headers['SID'] = sid
@@ -75,12 +79,20 @@ class SubscriptionRegistry(object):
                     # start over.
                     await requests_request(method='UNSUBSCRIBE', url=url,
                                     headers={'SID': sid})
-                    self._do_resubscribe(device,url)
-                    return
-                timeout = int(response.headers.get('timeout', _SUBSCRIBETIMEOUT).replace(
-                    'Second-', ''))
-                sid = response.headers.get('sid', sid)
-                await aio.sleep(int(timeout * 0.75))
+                    #Do I need to reset sid?
+                    sidwaschanged = True
+                    sid = None
+                else:
+                    timeout = int(response.headers.get('timeout', _SUBSCRIBETIMEOUT).replace(
+                        'Second-', ''))
+                    oldsid = sid
+                    sid = response.headers.get('sid', sid)
+                    if sid != oldsid:
+                        sidwaschanged = True
+                if sidwaschanged:
+                    await aio.sleep(1)
+                else:
+                    await aio.sleep(int(timeout * 0.75))
         except:
             del self._subscriptions[device.host]
 
@@ -91,7 +103,7 @@ class SubscriptionRegistry(object):
             # trim garbage from end, if any
             data = data.split("\n\n")[0]
             doc = cElementTree.fromstring(data)
-            for propnode in doc.findall(f'./{NS}property'):
+            for propnode in doc.findall('./{}property'.format(NS)):
                 for property_ in propnode.getchildren():
                     text = property_.text
                     if isinstance(device, Insight) and property_.tag=='BinaryState':

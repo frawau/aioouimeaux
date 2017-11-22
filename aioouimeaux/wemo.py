@@ -80,6 +80,8 @@ class WeMo(object):
             # Start the server to listen to new devices
             addrinfo = socket.getaddrinfo(UPNP_ADDR, None)[0]
             sock = socket.socket(addrinfo[0], socket.SOCK_DGRAM)
+            # Allow multiple copies of this program on one machine
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             listen = loop.create_datagram_endpoint(
                         partial(UPnP,loop,UPNP_ADDR,self._found_device,self.upnp),
                         sock=sock

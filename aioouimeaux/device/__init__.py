@@ -88,7 +88,7 @@ class Device(object):
 
     def explain(self,prefix=""):
         for name, svc in self.services.items():
-            print(f"{prefix}{name}")
+            print("{}{}".format(prefix, name))
             print(prefix+'-' * len(name))
             for aname, action in svc.actions.items():
                 print("%s  %s(%s)" % (prefix,aname, ', '.join(action.args)))
@@ -96,15 +96,15 @@ class Device(object):
 
     @property
     def model(self):
-        return self._config.get_modelDescription()
+        return self._config.modelDescription
 
     @property
     def name(self):
-        return self._config.get_friendlyName()
+        return self._config.friendlyName
 
     @property
     def serialnumber(self):
-        return self._config.get_serialNumber()
+        return self._config.serialNumber
 
 
 def test():

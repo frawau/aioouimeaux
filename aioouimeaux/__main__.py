@@ -36,18 +36,18 @@ listoffunc=OrderedDict()
 listoffunc["Get Home Id"] = (lambda dev: dev.basicevent.GetHomeId(),"HomeId")
 listoffunc["Get MAC Address"] = (lambda dev: dev.basicevent.GetMacAddr(),"MacAddr")
 listoffunc["Get Device Id"] = (lambda dev: dev.basicevent.GetDeviceId(),"")
-listoffunc["Get Serial Number"] = (lambda dev: dev.basicevent.GetSerialNo(),"")
+listoffunc["Get Serial Number"] = (lambda dev: dev.serialnumber,"")
 
 async def showinfo(future,info,dev,key=""):
     try:
         await future
         resu = future.result()
         if key:
-            print(f"\n{dev.name}: {info} is {resu[key]}")
+            print("\n{}: {} is {}".format(dev.name, info,resu[key]))
         else:
-            print(f"\n{dev.name}: {info} is {resu}")
+            print("\n{}: {} is {}".format(dev.name, info,resu))
     except Exception as e:
-        print(f"\nException for {dev.name}: {info} failed with {e}")
+        print("\nException for {}: {} failed with {}".format(dev.name, info,e))
         unregister_device(dev)
 
 async def await_result(future,dev):
@@ -56,7 +56,7 @@ async def await_result(future,dev):
         resu = future.result()
         #TODO Could log on debug
     except Exception as e:
-        print(f"\nException for {dev.name}: On/Off failed with {e}")
+        print("\nException for {}: On/Off failed with {e}".format(dev.name))
         unregister_device(dev)
 
 def readin():
@@ -91,7 +91,7 @@ def readin():
                     if selection > (len(listoffunc)+2):
                         print("Invalid selection.")
                     elif selection == (len(listoffunc)+1):
-                        print(f"Function supported by {wemodoi.name}")
+                        print("Function supported by {}".format(wemodoi.name))
                         wemodoi.explain(prefix="\t")
                         wemodoi = None
                     elif selection == (len(listoffunc)+2):
@@ -101,7 +101,7 @@ def readin():
                             for key in lok:
                                 fcnt = getattr(fcnt,key,None)
                                 if fcnt is None:
-                                    print(f"Unknown function {lov[1].strip()}")
+                                    print("Unknown function {}".format(lov[1].strip()))
                                     break
                             if fcnt:
                                 if callable(fcnt):
@@ -132,7 +132,10 @@ def readin():
                         fcnt,key = listoffunc[what]
                         what = what.replace("Get","").strip()
                         future = fcnt(wemodoi)
-                        xx = aio.ensure_future(showinfo(future,what,wemodoi,key))
+                        if aio.isfuture(future):
+                            xx = aio.ensure_future(showinfo(future,what,wemodoi,key))
+                        else:
+                            print("\n{}: {} is {}".format(wemodoi.name, what, future))
                         wemodoi = None
                     else:
                         wemodoi = None
@@ -155,13 +158,13 @@ def readin():
         print("Select Function for {}:".format(wemodoi.name))
         selection = 1
         if wemodoi.device_type == "Switch":
-            print(f"\t[{selection}]\tPower (0 or 1)")
+            print("\t[{}]\tPower (0 or 1)".format(selection))
             selection += 1
         for x in listoffunc:
-            print(f"\t[{selection}]\t{x}")
+            print("\t[{}]\t{}".format(selection,x))
             selection += 1
-        print(f"\t[{selection}]\tExplain")
-        print(f"\t[{selection+1}]\tFunction X (e.g. basicevent.GetHomeInfo see 'explain')")
+        print("\t[{}]\tExplain".format(selection))
+        print("\t[{}]\tFunction X (e.g. basicevent.GetHomeInfo see 'explain')".format(selection+1))
         print("")
         print("\t[0]\tBack to device selection")
     else:
@@ -170,14 +173,14 @@ def readin():
         devices = MyWeMo.list_devices()
         devices.sort()
         for x in devices:
-            print(f"\t[{idx}]\t{x}")
+            print("\t[{}]\t{}".format(idx,x))
             idx+=1
     print("")
     print("Your choice: ", end='',flush=True)
 
 
 def report_status(dev):
-    print(f"{dev.device_type} {dev.name} status is now {dev.get_state() and 'On' or 'Off'}")
+    print("{} {} status is now {}".format(dev.device_type, dev.name, dev.get_state() and 'On' or 'Off'))
 
 def register_device(dev):
     dev.register_callback("statechange", report_status)
@@ -185,11 +188,12 @@ def register_device(dev):
 
 def unregister_device(dev):
     global MyWeMo
-    print(f"Device {dev} with {dev.basicevent.eventSubURL}")
+    print("Device {} with {}".format(dev, dev.basicevent.eventSubURL))
     MyWeMo.device_gone(dev)
 
 
 loop = aio.get_event_loop()
+#loop.set_debug(True)
 MyWeMo = WeMo(callback=register_device)
 MyWeMo.start()
 try:

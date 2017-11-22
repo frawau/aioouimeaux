@@ -13,8 +13,7 @@ class Bridge(Device):
     def __repr__(self):
         self.bridge_get_lights()
         self.bridge_get_groups()
-        return f'<WeMo Bridge "{self.name}", Lights: {len(self.Lights)}, Groups: {len(self.Groups)}>'
-
+        return '<WeMo Bridge "{}", Lights: {}, Groups: {}>'.format(self.name, len(self.Lights), len(self.Groups))
     def bridge_get_lights(self):
         endfuture = aio.Future()
         future = self.basicevent.GetMacAddr().get('PluginUDN')

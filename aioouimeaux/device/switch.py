@@ -7,7 +7,7 @@ class Switch(Device):
     device_type = "Switch"
 
     def __repr__(self):
-        return f'<WeMo Switch "{self.name}">'
+        return '<WeMo Switch "{}">'.format(self.name)
 
     def set_state(self, state):
         """

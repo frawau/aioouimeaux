@@ -5,7 +5,7 @@ import os
 import sys
 
 here = lambda *a: os.path.join(os.path.dirname(__file__), *a)
-version='0.1.0b2'
+version='0.1.0b3'
 
 try:
     from setuptools import setup, find_packages
@@ -46,7 +46,7 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Natural Language :: English',
-
+        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
     ],
     test_suite='tests',

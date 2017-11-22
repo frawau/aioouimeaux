@@ -7,7 +7,7 @@ class Maker(Device):
     device_type = "Maker"
 
     def __repr__(self):
-        return f'<WeMo Maker "{self.name}">'
+        return '<WeMo Maker "{}">'.format(self.name)
 
     def get_state(self, force_update=False):
         """

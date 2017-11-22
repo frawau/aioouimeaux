@@ -4,7 +4,7 @@ from .switch import Switch
 class Insight(Switch):
 
     def __repr__(self):
-        return f'<WeMo Insight "{self.name}">'
+        return '<WeMo Insight "{}">'.format(self.name)
 
     @property
     def insight_params(self):

@@ -28,7 +28,7 @@ class Action(object):
         self.args = {}
         self.headers = {
             'Content-Type': 'text/xml',
-            'SOAPACTION': f'"{self.serviceType}#{self.name}"'
+            'SOAPACTION': '"{}#{}"'.format(self.serviceType,self.name)
         }
         arglist = action_config.get_argumentList()
         if arglist is not None:
@@ -62,7 +62,7 @@ class Action(object):
             future.set_exception(e)
 
     def __repr__(self):
-        return f"<Action {self.name} ({', '.join(self.args)}>"
+        return "<Action {} ({}>".format(self.name, ', '.join(self.args))
 
 
 class Service(object):

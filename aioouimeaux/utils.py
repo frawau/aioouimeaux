@@ -5,6 +5,7 @@ import time
 
 import asyncio as aio
 import aiohttp as aioh
+import async_timeout as aioto
 import netifaces
 
 
@@ -52,7 +53,7 @@ def matcher(match_string):
 # a subscription.
 _RETRIES = 3
 _DELAY = 3
-
+_TIMEOUT = 13
 
 def get_retries():
     return _RETRIES
@@ -62,12 +63,17 @@ async def requests_get(url, *, allow_redirects=True, **kwargs):
     while remaining:
         remaining -= 1
         try:
-            async with aioh.ClientSession() as session:
-                async with session.get(url, allow_redirects=allow_redirects, **kwargs) as response:
-                    if response.status != 200:
-                        raise aioh.ClientConnectionError
-                    response.raw_body = await response.read()
-                    return response
+            with aioto.timeout(_TIMEOUT):
+                async with aioh.ClientSession() as session:
+                    async with session.get(url, allow_redirects=allow_redirects, **kwargs) as response:
+                        if response.status != 200:
+                            raise aioh.ClientConnectionError
+                        response.raw_body = await response.read()
+                        return response
+        except aio.TimeoutError:
+            if not remaining:
+                raise aioh.ClientConnectionError
+            aio.sleep(_DELAY)
         except aioh.ClientConnectionError:
             if not remaining:
                 raise
@@ -78,10 +84,15 @@ async def requests_post(url, *, data=None, **kwargs):
     while remaining:
         remaining -= 1
         try:
-            async with aioh.ClientSession() as session:
-                async with session.post(url, data = data, **kwargs) as response:
-                    response.raw_body = await response.read()
-                    return response
+            with aioto.timeout(_TIMEOUT):
+                async with aioh.ClientSession() as session:
+                    async with session.post(url, data = data, **kwargs) as response:
+                        response.raw_body = await response.read()
+                        return response
+        except aio.TimeoutError:
+            if not remaining:
+                raise aioh.ClientConnectionError
+            aio.sleep(_DELAY)
         except aioh.ClientConnectionError:
             if not remaining:
                 raise
@@ -92,10 +103,15 @@ async def requests_request(method, url, **kwargs):
     while remaining:
         remaining -= 1
         try:
-            async with aioh.ClientSession() as session:
-                async with session.request(method, url, **kwargs) as response:
-                    response.raw_body = await response.read()
-                    return response
+            with aioto.timeout(_TIMEOUT):
+                async with aioh.ClientSession() as session:
+                    async with session.request(method, url, **kwargs) as response:
+                        response.raw_body = await response.read()
+                        return response
+        except aio.TimeoutError:
+            if not remaining:
+                raise aioh.ClientConnectionError
+            aio.sleep(_DELAY)
         except aioh.ClientConnectionError:
             if not remaining:
                 raise
