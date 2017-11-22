@@ -5,7 +5,7 @@ import os
 import sys
 
 here = lambda *a: os.path.join(os.path.dirname(__file__), *a)
-version='0.1.0b3'
+version='0.1.0b4'
 
 try:
     from setuptools import setup, find_packages
@@ -38,7 +38,7 @@ setup(
     install_requires=requirements,
     license="BSD",
     zip_safe=False,
-    python_requires='>=3.6',
+    python_requires='>=3.5',
     keywords='aioouimeaux WeMo automation',
     classifiers=[
         'Development Status :: 4 - Beta',
