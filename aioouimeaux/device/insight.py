@@ -1,14 +1,33 @@
 from datetime import datetime
 from .switch import Switch
+import asyncio as aio
 
 class Insight(Switch):
+
+
+    def __init__(self, url):
+        super().__init__(url)
+        self.measurements={'state': 0,
+                'last change': 0,
+                'current on time': 0,
+                'today on time': 0,
+                'total on time': 0,
+                'today consumption': 0,
+                'total consumption': 0,
+                'current power': 0}
 
     def __repr__(self):
         return '<WeMo Insight "{}">'.format(self.name)
 
     @property
     def insight_params(self):
-        params = self.insight.GetInsightParams().get('InsightParams')
+        xx = aio.ensure_future(self._insight_params())
+        return self.measurements
+
+
+    async def _insight_params(self):
+        params = await self.insight.GetInsightParams()#.get('InsightParams')
+        params = params.get('InsightParams')
         (
             state,  # 0 if off, 1 if on, 8 if on but load is off
             lastchange,
@@ -22,14 +41,14 @@ class Insight(Switch):
             totalmw,
             powerthreshold
         ) = params.split('|')
-        return {'state': state,
-                'lastchange': datetime.fromtimestamp(int(lastchange)),
-                'onfor': int(onfor),
-                'ontoday': int(ontoday),
-                'ontotal': int(ontotal),
-                'todaymw': int(float(todaymw)),
-                'totalmw': int(float(totalmw)),
-                'currentpower': int(float(currentmw))}
+        self.measurements = {'state': state,
+                'last change': datetime.fromtimestamp(int(lastchange)).strftime("%Y-%m-%d %H:%M:%S"),
+                'current on time': int(onfor),
+                'today on time': int(ontoday),
+                'total on time': int(ontotal),
+                'today consumption': int(float(todaymw)),
+                'total consumption': int(float(totalmw)),
+                'current power': int(float(currentmw))}
 
     @property
     def today_kwh(self):

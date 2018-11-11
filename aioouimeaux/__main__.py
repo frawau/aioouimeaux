@@ -37,10 +37,11 @@ listoffunc["Get Home Id"] = (lambda dev: dev.basicevent.GetHomeId(),"HomeId")
 listoffunc["Get MAC Address"] = (lambda dev: dev.basicevent.GetMacAddr(),"MacAddr")
 listoffunc["Get Device Id"] = (lambda dev: dev.basicevent.GetDeviceId(),"")
 listoffunc["Get Serial Number"] = (lambda dev: dev.serialnumber,"")
+listoffunc["Get Power Consumption"] = (lambda dev: dev.insight_params,"")
 
 async def showinfo(future,info,dev,key=""):
     try:
-        await future
+        await aio.wait_for(future, timeout=5)
         resu = future.result()
         if key:
             print("\n{}: {} is {}".format(dev.name, info,resu[key]))
@@ -52,7 +53,7 @@ async def showinfo(future,info,dev,key=""):
 
 async def await_result(future,dev):
     try:
-        await future
+        await aio.wait_for(future, timeout=5)
         resu = future.result()
         #TODO Could log on debug
     except Exception as e:
@@ -131,9 +132,13 @@ def readin():
                         what = [x for x in listoffunc.keys()][selection-1]
                         fcnt,key = listoffunc[what]
                         what = what.replace("Get","").strip()
-                        future = fcnt(wemodoi)
-                        if aio.isfuture(future):
-                            xx = aio.ensure_future(showinfo(future,what,wemodoi,key))
+                        try:
+                            future = fcnt(wemodoi)
+                            if aio.isfuture(future):
+                                    xx = aio.ensure_future(showinfo(future,what,wemodoi,key))
+                        except:
+                            print("Operation not supported by device.")
+
                         else:
                             print("\n{}: {} is {}".format(wemodoi.name, what, future))
                         wemodoi = None

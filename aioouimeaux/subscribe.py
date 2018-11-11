@@ -56,7 +56,10 @@ class SubscriptionRegistry(object):
                 self._subscriptions[device.host].cancel()
             except:
                 pass
-        self._subscriptions[device.host] = aio.get_event_loop().create_task(self._resubscribe(device,url,sid))
+        try:
+            self._subscriptions[device.host] = aio.get_event_loop().create_task(self._resubscribe(device,url,sid))
+        except:
+            pass
 
     async def _resubscribe(self, device, url, sid=None):
         try:
@@ -94,7 +97,11 @@ class SubscriptionRegistry(object):
                 else:
                     await aio.sleep(int(timeout * 0.75))
         except:
-            del self._subscriptions[device.host]
+            #del self._subscriptions[device.host]
+            try:
+                self.unregister(device)
+            except:
+                pass
 
     def _handle(self, environ, start_response):
         device = self._devices.get(environ['REMOTE_ADDR'])

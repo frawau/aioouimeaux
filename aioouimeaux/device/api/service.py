@@ -54,7 +54,7 @@ class Action(object):
             )
             response = await requests_post(self.controlURL, data=body.strip(), headers=self.headers)
             d = {}
-            resp = await response.read()
+            resp = response.raw_body
             for r in et.fromstring(resp).getchildren()[0].getchildren()[0].getchildren():
                 d[r.tag] = r.text
             future.set_result(d)

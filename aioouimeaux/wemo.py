@@ -158,16 +158,21 @@ class WeMo(object):
 
     def _process_device(self, device):
         self.devices[device.name] = device
-        if self._with_subscribers:
-            self.registry.register(device)
-            #self.registry.on(device, 'BinaryState',
-                             #device._update_state)
         try:
+            if self._with_subscribers:
+                self.registry.register(device)
+                #self.registry.on(device, 'BinaryState',
+                                #device._update_state)
             if isinstance(device, Bridge):
                 pass
             else:
                 device.ping()
-        except DeviceUnreachable:
+        except: #DeviceUnreachable:
+            log.warning("Could not connect to device %s"%device.name)
+            if self._with_subscribers:
+                self.registry.unregister(device)
+            else:
+                del self.devices[device.name]
             return
         self._callback(device)
 
