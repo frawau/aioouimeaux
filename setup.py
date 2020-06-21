@@ -5,7 +5,7 @@ import os
 import sys
 
 here = lambda *a: os.path.join(os.path.dirname(__file__), *a)
-version='0.1.0b5'
+version='0.1.0b6'
 
 try:
     from setuptools import setup, find_packages

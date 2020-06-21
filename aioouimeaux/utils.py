@@ -73,11 +73,11 @@ async def requests_get(url, *, allow_redirects=True, **kwargs):
         except aio.TimeoutError:
             if not remaining:
                 raise aioh.ClientConnectionError
-            aio.sleep(_DELAY)
+            await aio.sleep(_DELAY)
         except aioh.ClientConnectionError:
             if not remaining:
                 raise
-            aio.sleep(_DELAY)
+            await aio.sleep(_DELAY)
 
 async def requests_post(url, *, data=None, **kwargs):
     remaining = _RETRIES
@@ -92,11 +92,11 @@ async def requests_post(url, *, data=None, **kwargs):
         except aio.TimeoutError:
             if not remaining:
                 raise aioh.ClientConnectionError
-            aio.sleep(_DELAY)
+            await aio.sleep(_DELAY)
         except aioh.ClientConnectionError:
             if not remaining:
                 raise
-            aio.sleep(_DELAY)
+            await aio.sleep(_DELAY)
 
 async def requests_request(method, url, **kwargs):
     remaining = _RETRIES
@@ -111,9 +111,9 @@ async def requests_request(method, url, **kwargs):
         except aio.TimeoutError:
             if not remaining:
                 raise aioh.ClientConnectionError
-            aio.sleep(_DELAY)
+            await aio.sleep(_DELAY)
         except aioh.ClientConnectionError:
             if not remaining:
                 raise
-            aio.sleep(_DELAY)
+            await aio.sleep(_DELAY)
 
